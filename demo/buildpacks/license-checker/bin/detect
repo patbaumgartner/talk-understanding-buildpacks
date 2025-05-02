@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Detecting for FOSSA license scan support..."
+
+cat <<EOF
+[[provides]]
+name = "fossa-scan"
+
+[[requires]]
+name = "jdk"
+EOF
+
+exit 0
