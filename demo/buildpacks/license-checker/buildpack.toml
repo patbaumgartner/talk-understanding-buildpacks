@@ -1,0 +1,9 @@
+api = "0.9"
+
+[buildpack]
+id = "patbaumgartner/license-checker"
+version = "0.1.0"
+name = "License Checker Buildpack"
+
+[[stacks]]
+id = "io.buildpacks.stacks.jammy"
