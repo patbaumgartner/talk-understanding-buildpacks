@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Buildpack build script for FOSSA license checker (API v0.9)
+
+LAYERS_DIR="$1"
+PLATFORM_DIR="$2"
+PLAN_PATH="$3"
+
+ENV_DIR="$PLATFORM_DIR/env"
+APP_DIR="/workspace"
+FOSSA_LAYER_DIR="${LAYERS_DIR}/fossa-scan"
+FOSSA_OUTPUT="${FOSSA_LAYER_DIR}/fossa-output.json"
+
+FOSSA_VERSION="3.10.7"
+FOSSA_URL="https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa_${FOSSA_VERSION}_linux_amd64.tar.gz"
+FOSSA_TMP_DIR="/tmp/fossa"
+FOSSA_BIN="${FOSSA_TMP_DIR}/fossa"
+
+# --- Start scan ---
+echo "▶️ Starting FOSSA License Scan"
+echo "📁 Application directory: $APP_DIR"
+echo "📁 Layers directory: $LAYERS_DIR"
+
+# Ensure writable layer directory
+mkdir -p "$FOSSA_LAYER_DIR"
+
+# Download FOSSA CLI if not cached
+mkdir -p "$FOSSA_TMP_DIR"
+if [[ ! -x "$FOSSA_BIN" ]]; then
+  echo "⬇️ Downloading FOSSA CLI v$FOSSA_VERSION..."
+  curl -sSL "$FOSSA_URL" | tar -xz -C "$FOSSA_TMP_DIR"
+  chmod +x "$FOSSA_BIN"
+fi
+
+# Set JAVA_HOME from provided env dir
+JAVA_ENV_PATH="$ENV_DIR/JAVA_HOME"
+if [[ -f "$JAVA_ENV_PATH" ]]; then
+  export JAVA_HOME="$(cat "$JAVA_ENV_PATH")"
+  export PATH="$JAVA_HOME/bin:$PATH"
+else
+  JAVA_HOME_FILE=$(find "$ENV_DIR" -name JAVA_HOME -type f -print -quit 2>/dev/null || true)
+  if [[ -n "$JAVA_HOME_FILE" ]]; then
+    export JAVA_HOME="$(cat "$JAVA_HOME_FILE")"
+    export PATH="$JAVA_HOME/bin:$PATH"
+  else
+    echo "⚠️ JAVA_HOME not provided via required buildpacks. Java may not be available."
+  fi
+fi
+
+if [[ -d "$APP_DIR" ]]; then
+  cd "$APP_DIR"
+else
+  echo "❌ Application directory not found: $APP_DIR"
+  exit 1
+fi
+
+if [[ "${BP_DEBUG_FOSSA:-}" == "true" ]]; then
+  echo "📂 Project directory structure:"
+  if command -v tree >/dev/null 2>&1; then
+    tree .
+  else
+    find . | sort
+  fi
+fi
+
+# Run scan
+if ! "$FOSSA_BIN" analyze . \
+  --output \
+  --without-default-filters \
+  --include-unused-deps \
+  --debug > "$FOSSA_OUTPUT" 2>"${FOSSA_LAYER_DIR}/fossa-debug.log"; then
+  echo "⚠️ FOSSA scan completed with errors (check debug log)"
+fi
+
+# Optional: show FOSSA output
+if [[ "${BP_DEBUG_FOSSA:-}" == "true" ]]; then
+  echo "🔍 Debug: Contents of fossa-output.json"
+  cat "$FOSSA_OUTPUT"
+fi
+
+# Fail build if GPL license is detected
+if grep -iq "GPL" "$FOSSA_OUTPUT"; then
+  echo "❌ GPL license detected! Failing the build."
+  exit 1
+fi
+
+# Fail build if no projects found (possible scan failure)
+if ! grep -q '"projects":\[\]' "$FOSSA_OUTPUT"; then
+  echo "✅ License check passed. No GPL license found."
+else
+  echo "⚠️ FOSSA scan returned no projects. Check configuration."
+fi
+
+# Mark the layer
+cat >"${LAYERS_DIR}/fossa-scan.toml" <<EOF
+[types]
+build = false
+launch = false
+cache = false
+EOF
+
+exit 0
