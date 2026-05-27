@@ -15,3 +15,7 @@ We will also discuss the Paketo Buildpacks project, emphasizing its flexibility 
 Patrick Baumgartner is a passionate software crafter, technical agile coach and trainer at 42talents. He works with people to create beautiful and simple solutions and enjoys building software for the cloud with Java, the Spring ecosystem, Neo4j and ElasticSearch and other open source technologies.
 
 Learning new things from others and with others is something Patrick really enjoys. So he is actively involved in software craftsmanship, Java and Spring, and the agile community. He likes to make a difference, experiment and learn from and with others.
+
+---
+
+🔗 [patbaumgartner.com](https://patbaumgartner.com) · [More talks & projects on GitHub](https://github.com/patbaumgartner)
