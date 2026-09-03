@@ -13,7 +13,7 @@ APP_DIR="/workspace"
 FOSSA_LAYER_DIR="${LAYERS_DIR}/fossa-scan"
 FOSSA_OUTPUT="${FOSSA_LAYER_DIR}/fossa-output.json"
 
-FOSSA_VERSION="3.10.7"
+FOSSA_VERSION="3.18.2"
 FOSSA_URL="https://github.com/fossas/fossa-cli/releases/download/v${FOSSA_VERSION}/fossa_${FOSSA_VERSION}_linux_amd64.tar.gz"
 FOSSA_TMP_DIR="/tmp/fossa"
 FOSSA_BIN="${FOSSA_TMP_DIR}/fossa"
